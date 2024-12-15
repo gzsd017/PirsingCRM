@@ -54,18 +54,13 @@ class Ui_MainWindow(object):
         self.label.setWordWrap(True)
         self.label.setObjectName("label")
 
-    def create_combobox(self):
-        self.combo_box = QtWidgets.QComboBox(self.centralwidget)
-        self.combo_box.setGeometry(QtCore.QRect(430, 50, 300, 30))
-        self.combo_box.addItems(["Расписание", "Клиенты", "Услуга", "Материал", "Мастер", "Комплекты"])
-        #self.combo_box.currentIndexChanged.connect(self.change_table)
 
     def create_buttons(self):
         button_specs = [
             ("Расписание", (10, 110), "Расписание"),
             ("Клиенты", (10, 180), "Клиенты"),
             ("Услуги", (10, 250), "Услуги"),
-            ("Материалы", (10, 320), "Материал"),
+            ("Материал", (10, 320), "Материал"),
             ("Финансы", (10, 530), "Финансы"),
             ("Мастер", (10, 460), "Мастер"),
             ("Комплекты", (10, 390), "Комплекты"),
@@ -85,13 +80,13 @@ class Ui_MainWindow(object):
             button.setObjectName(name)
 
             if name == "dob":
-                #button.clicked.connect(self.add_record)
+                #button.clicked.connect(self.add_empty_row)
                 pass
             elif name == "red":
-                #button.clicked.connect(self.edit_record)
+                #button.clicked.connect(self.toggle_edit_mode)
                 pass
             elif name == "delit":
-                #button.clicked.connect(self.delete_record)
+                button.clicked.connect(self.delete_record)
                 pass
             else:
                 button.clicked.connect(lambda _, b=text: self.open_table_from_db(b))
@@ -124,6 +119,7 @@ class Ui_MainWindow(object):
         self.table_widget.setVisible(False)
         self.table_widget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
+
     def table_widget_style(self):
         return """
             QTableWidget {
@@ -148,6 +144,19 @@ class Ui_MainWindow(object):
 
     def open_table_from_db(self, table_name):
         self.db_manager.open_table_from_db(table_name)
+
+    def delete_record(self):
+        row_position = self.table_widget.currentRow()
+        if row_position >= 0:
+            record_id = self.table_widget.item(row_position, 0).text()  
+            self.crud_manager.delete_record("Расписание", record_id)
+            self.crud_manager.delete_record("Клиенты", record_id)
+            self.crud_manager.delete_record("Мастер", record_id)
+            self.crud_manager.delete_record("Материал", record_id)
+            self.crud_manager.delete_record("Комплекты", record_id)
+            self.crud_manager.delete_record("Клиенты", record_id)
+            self.table_widget.removeRow(row_position)
+
 
 if __name__ == "__main__":
     import sys
