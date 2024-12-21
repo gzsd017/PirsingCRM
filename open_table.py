@@ -1,7 +1,6 @@
 import sqlite3
 from PyQt5 import QtWidgets
 
-
 class OpenTable:
     def __init__(self, db_file, table_widget):
         self.db_file = db_file
@@ -25,7 +24,14 @@ class OpenTable:
 
             for row_idx, row_data in enumerate(rows):
                 for col_idx, col_data in enumerate(row_data):
-                    self.table_widget.setItem(row_idx, col_idx, QtWidgets.QTableWidgetItem(str(col_data)))
+                    item = QtWidgets.QTableWidgetItem(str(col_data))
+                    self.table_widget.setItem(row_idx, col_idx, item)
+
+                    # Здесь можно добавить логику для создания выпадающих списков, если это необходимо
+                    if column_names[col_idx] in ["Услуга", "Материал"]:  # Пример
+                        combo_box = QtWidgets.QComboBox()
+                        combo_box.addItems(["Option 1", "Option 2"])  # Замените на реальные данные
+                        self.table_widget.setCellWidget(row_idx, col_idx, combo_box)
 
             if "ID" in column_names:
                 id_col_index = column_names.index("ID")
@@ -43,7 +49,7 @@ class OpenTable:
             }
 
             for col_idx, width in enumerate(column_widths.get(table_name, [])):
-                self.table_widget.setColumnWidth(col_idx + 1, width)
+                self.table_widget.setColumnWidth(col_idx, width)
 
         except Exception as e:
             print(f"Возникла ошибка: {e}")
