@@ -6,6 +6,38 @@ class CRUD:
         self.connection.row_factory = sqlite3.Row  # Удобно для дебага
         self.cursor = self.connection.cursor()
 
+    def get_total_income(self):
+        try:
+            query = "SELECT SUM(price) AS total_income FROM Услуги"
+            self.cursor.execute(query)
+            result = self.cursor.fetchone()
+            return result['total_income'] if result['total_income'] is not None else 0
+        except Exception as e:
+            print(f"Error calculating total income: {e}")
+            return 0
+
+    def get_total_expenses(self):
+        try:
+            query = "SELECT SUM(cost) AS total_expenses FROM Материал"
+            self.cursor.execute(query)
+            result = self.cursor.fetchone()
+            return result['total_expenses'] if result['total_expenses'] is not None else 0
+        except Exception as e:
+            print(f"Error calculating total expenses: {e}")
+            return 0
+
+    def get_material_balance(self):
+        try:
+            query = """
+            SELECT SUM(purchased) - SUM(used) AS material_balance FROM Материал
+            """
+            self.cursor.execute(query)
+            result = self.cursor.fetchone()
+            return result['material_balance'] if result['material_balance'] is not None else 0
+        except Exception as e:
+            print(f"Error calculating material balance: {e}")
+            return 0
+
     def read_records(self, table_name):
         try:
             query = f"SELECT * FROM {table_name}"

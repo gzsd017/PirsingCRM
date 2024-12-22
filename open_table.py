@@ -27,10 +27,9 @@ class OpenTable:
                     item = QtWidgets.QTableWidgetItem(str(col_data))
                     self.table_widget.setItem(row_idx, col_idx, item)
 
-                    # Здесь можно добавить логику для создания выпадающих списков, если это необходимо
-                    if column_names[col_idx] in ["Услуга", "Материал"]:  # Пример
+                    if column_names[col_idx] in ["Услуга", "Материал"]:
                         combo_box = QtWidgets.QComboBox()
-                        combo_box.addItems(["Option 1", "Option 2"])  # Замените на реальные данные
+                        combo_box.addItems(["Option 1", "Option 2"])
                         self.table_widget.setCellWidget(row_idx, col_idx, combo_box)
 
             if "ID" in column_names:
@@ -44,7 +43,7 @@ class OpenTable:
                 "Услуги": [475, 475, 478],
                 "Материал": [475, 475, 478],
                 "Мастер": [475, 475, 478],
-                "Расписание": [237] * 6,
+                "Расписание": [237] * 7,
                 "Комплекты": [237] * 6
             }
 
@@ -53,5 +52,32 @@ class OpenTable:
 
         except Exception as e:
             print(f"Возникла ошибка: {e}")
+        finally:
+            connection.close()
+
+    def save_changes_to_db(self):
+        try:
+            connection = sqlite3.connect(self.db_file)
+            cursor = connection.cursor()
+
+            for row in range(self.table_widget.rowCount()):
+                record = []
+                for col in range(self.table_widget.columnCount()):
+                    item = self.table_widget.item(row, col)
+                    record.append(item.text() if item else None)
+
+                # Предполагаем, что первая колонка - это ID
+                id_value = record[0]
+                if id_value is not None:
+                    # Обновление существующей записи
+                    cursor.execute(f"UPDATE {self.current_table} SET {', '.join([f'column_{i} = ?' for i in range(1, len(record))])} WHERE ID = ?", (*record[1:], id_value))
+                else:
+                    # Добавление новой записи
+                    placeholders = ', '.join(['?'] * len(record))
+                    cursor.execute(f"INSERT INTO {self.current_table} VALUES ({placeholders})", record)
+
+            connection.commit()
+        except Exception as e:
+            print(f"Ошибка при сохранении изменений: {e}")
         finally:
             connection.close()
