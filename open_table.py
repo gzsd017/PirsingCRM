@@ -27,11 +27,6 @@ class OpenTable:
                     item = QtWidgets.QTableWidgetItem(str(col_data))
                     self.table_widget.setItem(row_idx, col_idx, item)
 
-                    if column_names[col_idx] in ["Услуга", "Клиент", "Мастер", "Материал1", "Материал2", "Материал3", "Материал4", "Материал5", "Материал"]:
-                        combo_box = QtWidgets.QComboBox()
-                        combo_box.addItems(["1", "2"])
-                        self.table_widget.setCellWidget(row_idx, col_idx, combo_box)
-
             if "ID" in column_names:
                 id_col_index = column_names.index("ID")
                 self.table_widget.setColumnHidden(id_col_index, True)
@@ -50,17 +45,20 @@ class OpenTable:
             for col_idx, width in enumerate(column_widths.get(table_name, [])):
                 self.table_widget.setColumnWidth(col_idx, width)
 
-        except Exception as e:
-            print(f"Возникла ошибка: {e}")
+        except sqlite3.Error as e:
+            print(f"Ошибка при открытии таблицы {table_name}: {e}")
         finally:
             connection.close()
 
     def save_changes_to_db(self):
+        if self.current_table is None:
+            print("Таблица не выбрана для сохранения данных.")
+            return
+
         try:
             connection = sqlite3.connect(self.db_file)
             cursor = connection.cursor()
 
-            # Получаем заголовки колонок
             column_names = [self.table_widget.horizontalHeaderItem(i).text() for i in
                             range(self.table_widget.columnCount())]
 
@@ -70,22 +68,19 @@ class OpenTable:
                     item = self.table_widget.item(row, col)
                     record.append(item.text() if item else None)
 
-                # Предполагаем, что первая колонка - это ID
                 id_value = record[0]
-                if id_value is not None:
-                    # Обновление существующей записи
+                if id_value:
                     set_clause = ', '.join([f'{column_names[i]} = ?' for i in range(1, len(record))])
                     cursor.execute(f"UPDATE {self.current_table} SET {set_clause} WHERE ID = ?",
                                    (*record[1:], id_value))
                 else:
-                    # Добавление новой записи
                     placeholders = ', '.join(['?'] * len(record))
                     cursor.execute(
                         f"INSERT INTO {self.current_table} ({', '.join(column_names)}) VALUES ({placeholders})", record)
 
             connection.commit()
             print("Изменения успешно сохранены.")
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f"Ошибка при сохранении изменений: {e}")
         finally:
             connection.close()
