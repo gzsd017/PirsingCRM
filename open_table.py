@@ -7,8 +7,34 @@ class OpenTable:
         self.table_widget = table_widget
         self.current_table = None
 
+    def fetch_data(self, query):
+        try:
+            connection = sqlite3.connect(self.db_file)
+            cursor = connection.cursor()
+            cursor.execute(query)
+            data = [row[0] for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            print(f"Ошибка при выполнении запроса: {e}")
+            data = []
+        finally:
+            connection.close()
+        return data
+
+    def create_combobox(self, items, current_value=None):
+        combo = QtWidgets.QComboBox()
+        combo.addItems(items)
+        if current_value and current_value in items:
+            combo.setCurrentText(current_value)
+        return combo
+
+    def clear_table(self):
+        self.table_widget.clearContents()
+        self.table_widget.setRowCount(0)
+        self.table_widget.setColumnCount(0)
+
     def open_table_from_db(self, table_name):
         self.current_table = table_name
+        self.clear_table()  # Очистка таблицы перед загрузкой новых данных
         try:
             connection = sqlite3.connect(self.db_file)
             cursor = connection.cursor()
@@ -24,8 +50,35 @@ class OpenTable:
 
             for row_idx, row_data in enumerate(rows):
                 for col_idx, col_data in enumerate(row_data):
-                    item = QtWidgets.QTableWidgetItem(str(col_data))
-                    self.table_widget.setItem(row_idx, col_idx, item)
+                    column_name = column_names[col_idx]
+
+                    if table_name == "Расписание":
+                        if column_name == "Клиент":
+                            items = self.fetch_data("SELECT Имя FROM Клиенты")
+                            combo = self.create_combobox(items, current_value=str(col_data))
+                            self.table_widget.setCellWidget(row_idx, col_idx, combo)
+                        elif column_name == "Услуга":
+                            items = self.fetch_data("SELECT Название FROM Услуги")
+                            combo = self.create_combobox(items, current_value=str(col_data))
+                            self.table_widget.setCellWidget(row_idx, col_idx, combo)
+                        elif column_name == "Мастер":
+                            items = self.fetch_data("SELECT Имя FROM Мастер")
+                            combo = self.create_combobox(items, current_value=str(col_data))
+                            self.table_widget.setCellWidget(row_idx, col_idx, combo)
+                        else:
+                            item = QtWidgets.QTableWidgetItem(str(col_data))
+                            self.table_widget.setItem(row_idx, col_idx, item)
+                    elif table_name == "Услуги" and column_name == "Материал":
+                        items = self.fetch_data("SELECT Название FROM Материал")
+                        combo = self.create_combobox(items, current_value=str(col_data))
+                        self.table_widget.setCellWidget(row_idx, col_idx, combo)
+                    elif table_name == "Комплекты" and column_name.startswith("Материал"):
+                        items = self.fetch_data("SELECT Название FROM Материал")
+                        combo = self.create_combobox(items, current_value=str(col_data))
+                        self.table_widget.setCellWidget(row_idx, col_idx, combo)
+                    else:
+                        item = QtWidgets.QTableWidgetItem(str(col_data))
+                        self.table_widget.setItem(row_idx, col_idx, item)
 
             if "ID" in column_names:
                 id_col_index = column_names.index("ID")
@@ -65,8 +118,11 @@ class OpenTable:
             for row in range(self.table_widget.rowCount()):
                 record = []
                 for col in range(self.table_widget.columnCount()):
-                    item = self.table_widget.item(row, col)
-                    record.append(item.text() if item else None)
+                    if isinstance(self.table_widget.cellWidget(row, col), QtWidgets.QComboBox):
+                        item = self.table_widget.cellWidget(row, col).currentText()
+                    else:
+                        item = self.table_widget.item(row, col).text() if self.table_widget.item(row, col) else None
+                    record.append(item)
 
                 id_value = record[0]
                 if id_value:
@@ -84,3 +140,7 @@ class OpenTable:
             print(f"Ошибка при сохранении изменений: {e}")
         finally:
             connection.close()
+
+
+
+
