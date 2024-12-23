@@ -75,6 +75,15 @@ class CRUD:
         except Exception as e:
             print(f"Error updating record in {table_name}: {e}")
 
+    def update_single_field(self, table_name, record_id, column_name, new_value):
+        try:
+            query = f"UPDATE {table_name} SET {column_name} = ? WHERE id = ?"
+            self.conn.execute(query, (new_value, record_id))
+            self.conn.commit()
+            print(f"Поле '{column_name}' обновлено для записи с ID {record_id}.")
+        except Exception as e:
+            print(f"Ошибка при обновлении записи: {e}")
+
     def delete_record(self, table_name, record_id):
         try:
             query = f"DELETE FROM {table_name} WHERE id = ?"

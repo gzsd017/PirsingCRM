@@ -1,6 +1,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from open_table import OpenTable
 from crud import CRUD
+from PyQt5.QtWidgets import QTableWidget
+from deleg import FormatDelegate
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -196,6 +198,19 @@ class Ui_MainWindow(object):
         self.table_widget.setVisible(True)
         self.db_manager.open_table_from_db(table_name)
 
+    def create_table_widget(self):
+        self.table_widget = QtWidgets.QTableWidget(self.centralwidget)
+        self.table_widget.setGeometry(QtCore.QRect(438, 180, 1430, 900))
+        self.table_widget.setStyleSheet(self.table_widget_style())
+        self.table_widget.setVisible(True)  
+        self.table_widget.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
+
+        self.format_delegate = FormatDelegate(self.table_widget)
+        column_count = self.table_widget.columnCount()
+        for column in range(column_count):
+            self.table_widget.setItemDelegateForColumn(column, self.format_delegate)
+
+        self.add_empty_row()
 
     def add_empty_row(self):
         row_position = self.table_widget.rowCount()
@@ -209,18 +224,14 @@ class Ui_MainWindow(object):
             print(f"Editing record with ID: {record_id}")
 
     def show_financials(self):
-        # Переключаем состояние видимости финансов
         self.financials_visible = not self.financials_visible
 
-        # Если финансовые метки показываются, скрываем таблицу
         if self.financials_visible:
             self.table_widget.setVisible(False)
 
-        # Устанавливаем видимость меток в соответствии с состоянием
         for label in self.financial_labels.values():
             label.setVisible(self.financials_visible)
 
-        # Обновление финансовой информации при её отображении
         if self.financials_visible:
             self.calculate_finances()
 
